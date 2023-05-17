@@ -1,5 +1,6 @@
 "use strict";
 
+const { validate } = require("jsonschema");
 const db = require("../db");
 const { BadRequestError, NotFoundError } = require("../expressError");
 const { sqlForPartialUpdate } = require("../helpers/sql");
@@ -38,16 +39,47 @@ class Company {
                     description,
                     num_employees AS "numEmployees",
                     logo_url AS "logoUrl"`, [
-          handle,
-          name,
-          description,
-          numEmployees,
-          logoUrl,
-        ],
+      handle,
+      name,
+      description,
+      numEmployees,
+      logoUrl,
+    ],
     );
     const company = result.rows[0];
 
     return company;
+  }
+
+  static whereBuilder({ minEmployees, maxEmployees, nameLike }) {
+    if (!minEmployees && !maxEmployees && !nameLike) {
+      return {
+        whereClause: "",
+        values: []
+      }
+    }
+
+    const string = [];
+    const values = [];
+
+    if (minEmployees) {
+      string.push(`num_employees >= $${values.length + 1}`);
+      values.push(minEmployees);
+    }
+
+    if (maxEmployees) {
+      string.push(`num_employees <= $${values.length + 1}`);
+      values.push(maxEmployees);
+    }
+
+    if (nameLike) {
+      string.push(`name ILIKE $${values.length + 1}`);
+      values.push(`%${nameLike}%`);
+    }
+
+    const whereClause = "WHERE " + string.join(" AND ");
+
+    return { whereClause, values };
   }
 
   /** Find all companies.
@@ -55,15 +87,20 @@ class Company {
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    * */
 
-  static async findAll() {
+  static async findAll(queries) {
+    const filter = Company.whereBuilder(queries)
+
     const companiesRes = await db.query(`
-        SELECT handle,
-               name,
-               description,
-               num_employees AS "numEmployees",
-               logo_url      AS "logoUrl"
-        FROM companies
-        ORDER BY name`);
+      SELECT handle,
+              name,
+              description,
+              num_employees AS "numEmployees",
+              logo_url      AS "logoUrl"
+      FROM companies
+      ${filter.whereClause}
+      ORDER BY name`,
+      filter.values);
+
     return companiesRes.rows;
   }
 
@@ -106,11 +143,11 @@ class Company {
 
   static async update(handle, data) {
     const { setCols, values } = sqlForPartialUpdate(
-        data,
-        {
-          numEmployees: "num_employees",
-          logoUrl: "logo_url",
-        });
+      data,
+      {
+        numEmployees: "num_employees",
+        logoUrl: "logo_url",
+      });
     const handleVarIdx = "$" + (values.length + 1);
 
     const querySql = `
