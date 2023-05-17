@@ -18,10 +18,20 @@ describe("sqlForPartialUpdate", function() {
     const data = {}
     const jsToSql = {firstName: "first_name"}
     try {
-      const result = sqlForPartialUpdate(data, jsToSql)
+      sqlForPartialUpdate(data, jsToSql)
       throw new Error("fail test, you shouldn't get here");
     } catch (err) {
       expect(err instanceof BadRequestError).toBeTruthy();
     }
+  })
+
+  test("works: works without optional parameter", function() {
+    const data = {firstName: "Test", email: 'test@example.com'}
+    const jsToSql = {}
+    const result = sqlForPartialUpdate(data, jsToSql)
+    expect(result).toEqual({
+      setCols: '"firstName"=$1, "email"=$2',
+      values: ['Test', 'test@example.com']
+    })
   })
 })
