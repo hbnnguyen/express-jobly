@@ -51,7 +51,14 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
  * Authorization required: none
  */
 
+//TODO: restructure function and assign req.query to a new variable
 router.get("/", async function (req, res, next) {
+  //TODO: better way to check if an object is empty?
+  if (!Object.keys(req.query)[0]) {
+    const companies = await Company.findAll();
+    return res.json({companies})
+  }
+
   const validator = jsonschema.validate(
     req.query,
     companyFilterSchema,
@@ -63,7 +70,11 @@ router.get("/", async function (req, res, next) {
     throw new BadRequestError(errs);
   }
 
-  const { minEmployees, maxEmployees, nameLike } = req.query;
+  //TODO: min and max are strings in our schema
+  let { minEmployees, maxEmployees, nameLike } = req.query;
+  minEmployees = parseInt(minEmployees);
+  maxEmployees = parseInt(maxEmployees);
+
   const companies = await Company.findAll({ minEmployees, maxEmployees, nameLike });
   return res.json({ companies });
 });

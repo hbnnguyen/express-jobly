@@ -51,44 +51,61 @@ class Company {
     return company;
   }
 
-  static whereBuilder({ minEmployees, maxEmployees, nameLike }) {
-    if (!minEmployees && !maxEmployees && !nameLike) {
-      return {
-        whereClause: "",
-        values: []
-      }
+  /** Takes an object of any combination of query parameters like:
+   * {
+   *   minEmployees: 1,
+   *   maxEmployees: 3,
+   *   nameLike: "company"
+   * }
+   *
+   * returns an object of "WHERE" clause statements and their values like:
+   * {
+   * whereClause: "WHERE num_employees >= $1 AND num_employees <= $2 AND name ILIKE $3",
+   * values: [1, 3, "%company%"]
+   * }
+   * */
+  static whereBuilder(queries) {
+    const queryStatements = [];
+    const values = [];
+    const { minEmployees, maxEmployees, nameLike } = queries;
+    
+    if (minEmployees > maxEmployees) {
+      throw new BadRequestError("minimum employees cannot be greater than maximum employees");
     }
 
-    const string = [];
-    const values = [];
-
     if (minEmployees) {
-      string.push(`num_employees >= $${values.length + 1}`);
+      queryStatements.push(`num_employees >= $${values.length + 1}`);
       values.push(minEmployees);
     }
 
     if (maxEmployees) {
-      string.push(`num_employees <= $${values.length + 1}`);
+      queryStatements.push(`num_employees <= $${values.length + 1}`);
       values.push(maxEmployees);
     }
 
     if (nameLike) {
-      string.push(`name ILIKE $${values.length + 1}`);
+      queryStatements.push(`name ILIKE $${values.length + 1}`);
       values.push(`%${nameLike}%`);
     }
 
-    const whereClause = "WHERE " + string.join(" AND ");
+    const whereClause = queryStatements.length > 0 ? "WHERE " + queryStatements.join(" AND ") : "";
 
     return { whereClause, values };
   }
 
   /** Find all companies.
+   * Can take any combination of optional query filters like:
+   * {
+   *   minEmployees: 1,
+   *   maxEmployees: 3,
+   *   nameLike: "company"
+   * }
    *
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    * */
 
   static async findAll(queries) {
-    const filter = Company.whereBuilder(queries)
+    const { whereClause, values } = Company.whereBuilder(queries)
 
     const companiesRes = await db.query(`
       SELECT handle,
@@ -97,9 +114,9 @@ class Company {
               num_employees AS "numEmployees",
               logo_url      AS "logoUrl"
       FROM companies
-      ${filter.whereClause}
+      ${whereClause}
       ORDER BY name`,
-      filter.values);
+      values);
 
     return companiesRes.rows;
   }

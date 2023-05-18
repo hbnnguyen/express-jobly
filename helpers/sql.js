@@ -3,7 +3,6 @@
 const { BadRequestError } = require("../expressError");
 
 /**
- * //FIXME: this docstring sucks.
  * takes in data that needs to be updated and returns the necessary SQL
  * @param {Object} dataToUpdate - contains data to be updated like: { firstName: "Test", email: 'test@example.com' }
  * @param {Object} jsToSql - can be empty. handles inconsistencies between JS property
