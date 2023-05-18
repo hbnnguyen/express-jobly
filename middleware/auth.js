@@ -59,7 +59,7 @@ function ensureIsAdmin(req, res, next) {
 function ensureIsCurrentUserOrAdmin(req, res, next) {
   const user = res.locals.user;
 
-  if (user.username === req.params.username || user.isAdmin === true) {
+  if (user?.username === req.params.username || user?.isAdmin === true) {
     return next();
   }
 
