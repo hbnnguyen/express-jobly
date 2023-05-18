@@ -52,10 +52,23 @@ function ensureIsAdmin(req, res, next) {
   throw new UnauthorizedError();
 }
 
-//TODO: add ensureIsUser
+/** Middleware to use when they must be logged in and an admin or the current user
+ *
+ * If not, raises Unauthorized
+ */
+function ensureIsCurrentUserOrAdmin(req, res, next) {
+  const user = res.locals.user;
+
+  if (user.username === req.params.username || user.isAdmin === true) {
+    return next();
+  }
+
+  throw new UnauthorizedError();
+}
 
 module.exports = {
   authenticateJWT,
   ensureLoggedIn,
-  ensureIsAdmin
+  ensureIsAdmin,
+  ensureIsCurrentUserOrAdmin
 };

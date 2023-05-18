@@ -78,7 +78,9 @@ describe("POST /companies", function () {
 
 describe("GET /companies", function () {
   test("ok for anon", async function () {
-    const resp = await request(app).get("/companies");
+    const resp = await request(app)
+    .get("/companies");
+
     expect(resp.body).toEqual({
       companies:
         [
@@ -105,6 +107,83 @@ describe("GET /companies", function () {
           },
         ],
     });
+  });
+
+  test("works: with minEmployees filter", async function () {
+    const resp = await request(app)
+      .get("/companies")
+      .query({
+        minEmployees: 2
+      });
+
+    expect(resp.body).toEqual({
+      companies:
+        [
+          {
+            handle: "c2",
+            name: "C2",
+            description: "Desc2",
+            numEmployees: 2,
+            logoUrl: "http://c2.img",
+          },
+          {
+            handle: "c3",
+            name: "C3",
+            description: "Desc3",
+            numEmployees: 3,
+            logoUrl: "http://c3.img",
+          },
+        ],
+    });
+  });
+
+  test("works: with maxEmployees filter", async function () {
+    const resp = await request(app)
+      .get("/companies")
+      .query({
+        maxEmployees: 2
+      });
+
+    expect(resp.body).toEqual({
+      companies:
+        [
+          {
+            handle: "c1",
+            name: "C1",
+            description: "Desc1",
+            numEmployees: 1,
+            logoUrl: "http://c1.img",
+          },
+          {
+            handle: "c2",
+            name: "C2",
+            description: "Desc2",
+            numEmployees: 2,
+            logoUrl: "http://c2.img",
+          },
+        ],
+    });
+  });
+
+  test("works: bad request when min > max", async function () {
+    const resp = await request(app)
+      .get("/companies")
+      .query({
+        minEmployees: 3,
+        maxEmployees: 2
+      });
+
+    expect(resp.statusCode).toEqual(400);
+  });
+
+  test("works: bad request when invalid queries", async function () {
+    const resp = await request(app)
+      .get("/companies")
+      .query({
+        minEmployees: "abcc123"
+      });
+
+    expect(resp.statusCode).toEqual(400);
   });
 });
 
