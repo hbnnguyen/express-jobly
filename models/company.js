@@ -67,25 +67,28 @@ class Company {
   static whereBuilder(queries) {
     const queryStatements = [];
     const values = [];
-    const { minEmployees, maxEmployees, nameLike } = queries;
     
-    if (minEmployees > maxEmployees) {
-      throw new BadRequestError("minimum employees cannot be greater than maximum employees");
-    }
+    if (queries) {
+      const { minEmployees, maxEmployees, nameLike } = queries;
 
-    if (minEmployees) {
-      queryStatements.push(`num_employees >= $${values.length + 1}`);
-      values.push(minEmployees);
-    }
+      if (minEmployees > maxEmployees) {
+        throw new BadRequestError("minimum employees cannot be greater than maximum employees");
+      }
 
-    if (maxEmployees) {
-      queryStatements.push(`num_employees <= $${values.length + 1}`);
-      values.push(maxEmployees);
-    }
+      if (minEmployees) {
+        queryStatements.push(`num_employees >= $${values.length + 1}`);
+        values.push(minEmployees);
+      }
 
-    if (nameLike) {
-      queryStatements.push(`name ILIKE $${values.length + 1}`);
-      values.push(`%${nameLike}%`);
+      if (maxEmployees) {
+        queryStatements.push(`num_employees <= $${values.length + 1}`);
+        values.push(maxEmployees);
+      }
+
+      if (nameLike) {
+        queryStatements.push(`name ILIKE $${values.length + 1}`);
+        values.push(`%${nameLike}%`);
+      }
     }
 
     const whereClause = queryStatements.length > 0 ? "WHERE " + queryStatements.join(" AND ") : "";

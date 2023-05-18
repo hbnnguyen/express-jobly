@@ -51,14 +51,15 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
  * Authorization required: none
  */
 
-//TODO: restructure function and assign req.query to a new variable
-//TODO: WE NEED TO REASSIGN REQ.QUERY TO A VARIABLE, MUTATE THOSE VALUES, AND THEN PASS THAT INTO OUR VALIDATOR
 router.get("/", async function (req, res, next) {
   const queries = req.query;
 
-  //TODO: bad code? should we be checking to see if min/max employees is truthy first?
-  queries.minEmployees = parseInt(queries.minEmployees);
-  queries.maxEmployees = parseInt(queries.maxEmployees);
+  if (queries.minEmployees) {
+    queries.minEmployees = Number(queries.minEmployees);
+  }
+  if (queries.maxEmployees) {
+    queries.maxEmployees = Number(queries.maxEmployees);
+  }
 
   const validator = jsonschema.validate(
     queries,
