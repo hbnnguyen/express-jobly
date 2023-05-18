@@ -52,6 +52,7 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
  */
 
 //TODO: restructure function and assign req.query to a new variable
+//TODO: WE NEED TO REASSIGN REQ.QUERY TO A VARIABLE, MUTATE THOSE VALUES, AND THEN PASS THAT INTO OUR VALIDATOR
 router.get("/", async function (req, res, next) {
   //TODO: better way to check if an object is empty?
   if (!Object.keys(req.query)[0]) {
