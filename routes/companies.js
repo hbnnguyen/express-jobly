@@ -54,14 +54,14 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
 //TODO: restructure function and assign req.query to a new variable
 //TODO: WE NEED TO REASSIGN REQ.QUERY TO A VARIABLE, MUTATE THOSE VALUES, AND THEN PASS THAT INTO OUR VALIDATOR
 router.get("/", async function (req, res, next) {
-  //TODO: better way to check if an object is empty?
-  if (!Object.keys(req.query)[0]) {
-    const companies = await Company.findAll();
-    return res.json({companies})
-  }
+  const queries = req.query;
+
+  //TODO: bad code? should we be checking to see if min/max employees is truthy first?
+  queries.minEmployees = parseInt(queries.minEmployees);
+  queries.maxEmployees = parseInt(queries.maxEmployees);
 
   const validator = jsonschema.validate(
-    req.query,
+    queries,
     companyFilterSchema,
     { required: true }
   );
@@ -71,12 +71,7 @@ router.get("/", async function (req, res, next) {
     throw new BadRequestError(errs);
   }
 
-  //TODO: min and max are strings in our schema
-  let { minEmployees, maxEmployees, nameLike } = req.query;
-  minEmployees = parseInt(minEmployees);
-  maxEmployees = parseInt(maxEmployees);
-
-  const companies = await Company.findAll({ minEmployees, maxEmployees, nameLike });
+  const companies = await Company.findAll(queries);
   return res.json({ companies });
 });
 
