@@ -46,12 +46,13 @@ function ensureLoggedIn(req, res, next) {
  */
 function ensureIsAdmin(req, res, next) {
   const user = res.locals.user;
-  if (user && user.isAdmin) {
+  if (user && user.isAdmin === true) {
     return next();
   }
   throw new UnauthorizedError();
 }
 
+//TODO: add ensureIsUser
 
 module.exports = {
   authenticateJWT,

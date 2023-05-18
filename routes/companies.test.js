@@ -58,7 +58,7 @@ describe("POST /companies", function () {
         handle: "new",
         numEmployees: 10,
       })
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u4Token}`);
     expect(resp.statusCode).toEqual(400);
   });
 
@@ -69,7 +69,7 @@ describe("POST /companies", function () {
         ...newCompany,
         logoUrl: "not-a-url",
       })
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u4Token}`);
     expect(resp.statusCode).toEqual(400);
   });
 });
@@ -189,7 +189,7 @@ describe("PATCH /companies/:handle", function () {
       .send({
         name: "new nope",
       })
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u4Token}`);
     expect(resp.statusCode).toEqual(404);
   });
 
@@ -199,7 +199,7 @@ describe("PATCH /companies/:handle", function () {
       .send({
         handle: "c1-new",
       })
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u4Token}`);
     expect(resp.statusCode).toEqual(400);
   });
 
@@ -209,7 +209,7 @@ describe("PATCH /companies/:handle", function () {
       .send({
         logoUrl: "not-a-url",
       })
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u4Token}`);
     expect(resp.statusCode).toEqual(400);
   });
 });
@@ -240,7 +240,7 @@ describe("DELETE /companies/:handle", function () {
   test("not found for no such company", async function () {
     const resp = await request(app)
       .delete(`/companies/nope`)
-      .set("authorization", `Bearer ${u1Token}`);
+      .set("authorization", `Bearer ${u4Token}`);
     expect(resp.statusCode).toEqual(404);
   });
 });

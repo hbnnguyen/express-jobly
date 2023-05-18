@@ -5,8 +5,8 @@
 const jsonschema = require("jsonschema");
 
 const express = require("express");
-const { ensureLoggedIn } = require("../middleware/auth");
-const { BadRequestError } = require("../expressError");
+const { ensureLoggedIn, ensureIsAdmin } = require("../middleware/auth");
+const { BadRequestError, UnauthorizedError } = require("../expressError");
 const User = require("../models/user");
 const { createToken } = require("../helpers/tokens");
 const userNewSchema = require("../schemas/userNew.json");
@@ -24,10 +24,10 @@ const router = express.Router();
  * This returns the newly created user and an authentication token for them:
  *  {user: { username, firstName, lastName, email, isAdmin }, token }
  *
- * Authorization required: login
+ * Authorization required: login, isAdmin
  **/
 
-router.post("/", ensureLoggedIn, async function (req, res, next) {
+router.post("/", ensureIsAdmin, async function (req, res, next) {
   const validator = jsonschema.validate(
       req.body,
       userNewSchema,
@@ -48,10 +48,10 @@ router.post("/", ensureLoggedIn, async function (req, res, next) {
  *
  * Returns list of all users.
  *
- * Authorization required: login
+ * Authorization required: login, isAdmin
  **/
 
-router.get("/", ensureLoggedIn, async function (req, res, next) {
+router.get("/", ensureIsAdmin, async function (req, res, next) {
   const users = await User.findAll();
   return res.json({ users });
 });
@@ -61,11 +61,14 @@ router.get("/", ensureLoggedIn, async function (req, res, next) {
  *
  * Returns { username, firstName, lastName, isAdmin }
  *
- * Authorization required: login
+ * Authorization required: current user or isAdmin
  **/
 
 router.get("/:username", ensureLoggedIn, async function (req, res, next) {
   const user = await User.get(req.params.username);
+  if (user.username !== res.locals.user.username && !res.locals.user.isAdmin) {
+    throw new UnauthorizedError();
+  }
   return res.json({ user });
 });
 
@@ -77,10 +80,15 @@ router.get("/:username", ensureLoggedIn, async function (req, res, next) {
  *
  * Returns { username, firstName, lastName, email, isAdmin }
  *
- * Authorization required: login
+ * Authorization required: current user or isAdmin
  **/
 
 router.patch("/:username", ensureLoggedIn, async function (req, res, next) {
+  const targetUser = await User.get(req.params.username);
+  if (targetUser.username !== res.locals.user.username && !res.locals.user.isAdmin) {
+    throw new UnauthorizedError();
+  }
+
   const validator = jsonschema.validate(
       req.body,
       userUpdateSchema,
@@ -98,10 +106,15 @@ router.patch("/:username", ensureLoggedIn, async function (req, res, next) {
 
 /** DELETE /[username]  =>  { deleted: username }
  *
- * Authorization required: login
+ * Authorization required: current user or isAdmin
  **/
 
 router.delete("/:username", ensureLoggedIn, async function (req, res, next) {
+  const targetUser = await User.get(req.params.username);
+  if (targetUser.username !== res.locals.user.username && !res.locals.user.isAdmin) {
+    throw new UnauthorizedError();
+  }
+
   await User.remove(req.params.username);
   return res.json({ deleted: req.params.username });
 });

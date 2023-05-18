@@ -54,6 +54,7 @@ router.post("/", ensureIsAdmin, async function (req, res, next) {
 router.get("/", async function (req, res, next) {
   const queries = req.query;
 
+  //TODO: write tests for min/max employees and invalid queries
   if (queries.minEmployees) {
     queries.minEmployees = Number(queries.minEmployees);
   }

@@ -67,4 +67,6 @@ describe("ensureLoggedIn", function () {
     expect(() => ensureLoggedIn(req, res, next))
         .toThrow(UnauthorizedError);
   });
+
+  //TODO: test ensureAdmin and isCurrentUserOrAdmin
 });
