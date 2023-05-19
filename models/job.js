@@ -41,6 +41,46 @@ class Job {
     return job;
   }
 
+    /** Takes an object of any combination of query parameters like:
+   * {
+   *   title: "test",
+   *   minSalary: 100,
+   *   hasEquity: true
+   * }
+   *
+   * returns an object of "WHERE" clause statements and their values like:
+   * {
+   * whereClause: "WHERE minSalary >= $1 AND equity > $2 AND title ILIKE $3",
+   * values: [100, 0, "%test%"]
+   * }
+   * */
+    static whereBuilder(queries) {
+      const queryStatements = [];
+      const values = [];
+
+      if (queries) {
+        const { title, minSalary, hasEquity } = queries;
+
+        if (minSalary) {
+          queryStatements.push(`salary >= $${values.length + 1}`);
+          values.push(minSalary);
+        }
+
+        if (hasEquity) {
+          queryStatements.push(`equity > $${values.length + 1}`);
+          values.push(0);
+        }
+
+        if (title) {
+          queryStatements.push(`title ILIKE $${values.length + 1}`);
+          values.push(`%${title}%`);
+        }
+      }
+
+      const whereClause = queryStatements.length > 0 ? "WHERE " + queryStatements.join(" AND ") : "";
+
+      return { whereClause, values };
+    }
 
   /** Find all jobs.
    * Can take any combination of optional query filters like:
@@ -125,7 +165,22 @@ class Job {
 
     return job;
   }
-}
 
+  /** Delete given job from database; returns undefined.
+ *
+ * Throws NotFoundError if job not found.
+ **/
+
+  static async remove(id) {
+    const result = await db.query(`
+          DELETE
+          FROM jobs
+          WHERE id = $1
+          RETURNING id`, [id]);
+    const job = result.rows[0];
+
+    if (!job) throw new NotFoundError(`No job: ${id}`);
+  }
+}
 
 module.exports = Job;
