@@ -8,6 +8,8 @@ const {
   commonBeforeEach,
   commonAfterEach,
   commonAfterAll,
+  j1Id,
+  j2Id
 } = require("./_testCommon");
 
 beforeAll(commonBeforeAll);
@@ -17,7 +19,7 @@ afterAll(commonAfterAll);
 
 /************************************** create */
 
-describe("create", async function () {
+describe("create", function () {
   const newJob = {
     title: "test job",
     salary: 10,
@@ -30,14 +32,14 @@ describe("create", async function () {
     expect(job).toEqual(newJob);
 
     const result = await db.query(
-      `SELECT title, salary, equity, companyHandle
+      `SELECT title, salary, equity, company_handle AS 'companyHandle'
            FROM jobs
            WHERE id = ${job.id}`);
     expect(result.rows).toEqual([
       {
         title: "test job",
         salary: 10,
-        equity: 0.1,
+        equity: "0.1",
         companyHandle: "c1"
       },
     ]);
@@ -59,7 +61,7 @@ describe("create", async function () {
 
 /************************************** whereBuilder */
 
-describe("whereBuilder", async function () {
+describe("whereBuilder", function () {
   test("works: given no query filters", async function () {
     let filter = Job.whereBuilder();
     expect(filter).toEqual({
@@ -69,7 +71,7 @@ describe("whereBuilder", async function () {
   });
 
   test("works: given title query filter", async function () {
-    let filter = Company.whereBuilder({ title: "J" });
+    let filter = Job.whereBuilder({ title: "J" });
     expect(filter).toEqual({
       whereClause: "WHERE title ILIKE $1",
       values: ["%J%"]
@@ -77,7 +79,7 @@ describe("whereBuilder", async function () {
   });
 
   test("works: given minSalary query filter", async function () {
-    let filter = Company.whereBuilder({ minSalary: 2 });
+    let filter = Job.whereBuilder({ minSalary: 2 });
     expect(filter).toEqual({
       whereClause: "WHERE salary >= $1",
       values: [2]
@@ -85,7 +87,7 @@ describe("whereBuilder", async function () {
   });
 
   test("works: given hasEquity query filter", async function () {
-    let filter = Company.whereBuilder({ hasEquity: true });
+    let filter = Job.whereBuilder({ hasEquity: true });
     expect(filter).toEqual({
       whereClause: "WHERE equity > $1",
       values: [0]
@@ -93,7 +95,7 @@ describe("whereBuilder", async function () {
   });
 
   test("works: given minSalary and hasEquity query filters", async function () {
-    let filter = Company.whereBuilder({
+    let filter = Job.whereBuilder({
       minSalary: 2,
       hasEquity: true
     });
@@ -104,7 +106,7 @@ describe("whereBuilder", async function () {
   });
 
   test("works: given all query filters", async function () {
-    let filter = Company.whereBuilder({
+    let filter = Job.whereBuilder({
       title: "J",
       minSalary: 2,
       hasEquity: true
@@ -118,26 +120,26 @@ describe("whereBuilder", async function () {
 
 /************************************** findAll */
 
-describe("findAll", async function () {
+describe("findAll", function () {
   test("works: no filter", async function () {
     let jobs = await Job.findAll();
     expect(jobs).toEqual([
       {
         title: "J1",
         salary: 100,
-        equity: 0,
+        equity: "0",
         companyHandle: "c1"
       },
       {
         title: "J2",
         salary: 200,
-        equity: 0.02,
+        equity: "0.02",
         companyHandle: "c2"
       },
       {
         title: "J3",
         salary: 300,
-        equity: 0.03,
+        equity: "0.03",
         companyHandle: "c3"
       },
     ]);
@@ -149,7 +151,7 @@ describe("findAll", async function () {
       {
         title: "J2",
         salary: 200,
-        equity: 0.02,
+        equity: "0.02",
         companyHandle: "c2"
       }
     ]);
@@ -161,13 +163,13 @@ describe("findAll", async function () {
       {
         title: "J2",
         salary: 200,
-        equity: 0.02,
+        equity: "0.02",
         companyHandle: "c2"
       },
       {
         title: "J3",
         salary: 300,
-        equity: 0.03,
+        equity: "0.03",
         companyHandle: "c3"
       }
     ]);
@@ -179,13 +181,13 @@ describe("findAll", async function () {
       {
         title: "J2",
         salary: 200,
-        equity: 0.02,
+        equity: "0.02",
         companyHandle: "c2"
       },
       {
         title: "J3",
         salary: 300,
-        equity: 0.03,
+        equity: "0.03",
         companyHandle: "c3"
       }
     ]);
@@ -201,7 +203,7 @@ describe("findAll", async function () {
       {
         title: "J3",
         salary: 300,
-        equity: 0.03,
+        equity: "0.03",
         companyHandle: "c3"
       }
     ]);
@@ -213,36 +215,115 @@ describe("findAll", async function () {
   });
 });
 
-describe("get by id", async function () {
-  test("works", async function () {
-
+describe("get by id", function () {
+  test("works: valid id", async function () {
+    let job = await Job.get(j1Id);
+    expect(job).toEqual({
+      title: "J1",
+      salary: 100,
+      equity: "0",
+      companyHandle: "c1"
+    });
   });
 
   test("not found if no such id", async function () {
-
+    try {
+      await Job.get(123);
+      throw new Error("fail test, you shouldn't get here");
+    } catch (err) {
+      expect(err instanceof NotFoundError).toBeTruthy();
+    }
   });
 });
 
-describe("update", async function () {
-  test("works", async function () {
+/************************************** update */
 
+describe("update", function () {
+  const updateData = {
+    title: "New",
+    salary: 500,
+    equity: 0.99,
+  };
+
+  test("works", async function () {
+    const job = await Job.update(j1Id, updateData);
+    expect(job).toEqual({
+      ...updateData,
+      companyHandle: "c1"
+    });
+
+    const result = await db.query(
+      `SELECT title, salary, equity, company_handle AS 'companyHandle'
+           FROM jobs
+           WHERE id = ${j1Id}`);
+    expect(result.rows).toEqual([{
+      title: "New",
+      salary: 500,
+      equity: "0.99",
+      companyHandle: "c1"
+    }]);
   });
 
-  test("works: invalid inputs", async function () {
+  test("works: null fields", async function () {
+    const updateDataSetNulls = {
+      title: "New",
+      salary: null,
+      equity: null
+    };
 
+    let job = await Job.update(j1Id, updateDataSetNulls);
+    expect(job).toEqual({
+      ...updateDataSetNulls,
+      companyHandle: "c1"
+    });
+
+    const result = await db.query(
+      `SELECT title, salary, equity, company_handle AS 'companyHandle'
+      FROM jobs
+      WHERE id = ${j1Id}`);
+    expect(result.rows).toEqual([{
+      title: "New",
+      salary: null,
+      equity: null,
+      companyHandle: "c1"
+    }]);
   });
 
   test("not found if no such id", async function () {
+    try {
+      await Job.update(123, updateData);
+      throw new Error("fail test, you shouldn't get here");
+    } catch (err) {
+      expect(err instanceof NotFoundError).toBeTruthy();
+    }
+  });
 
+  test("bad request with no data", async function () {
+    try {
+      await Job.update("c1", {});
+      throw new Error("fail test, you shouldn't get here");
+    } catch (err) {
+      expect(err instanceof BadRequestError).toBeTruthy();
+    }
   });
 });
 
-describe("delete", async function () {
-  test("works", async function () {
+/************************************** remove */
 
+describe("remove", function () {
+  test("works", async function () {
+    await Job.remove(j1Id);
+    const res = await db.query(
+      `SELECT id FROM companies WHERE id=${j1Id}`);
+    expect(res.rows.length).toEqual(0);
   });
 
   test("not found if no such id", async function () {
-
+    try {
+      await Job.remove(123);
+      throw new Error("fail test, you shouldn't get here");
+    } catch (err) {
+      expect(err instanceof NotFoundError).toBeTruthy();
+    }
   });
 });
